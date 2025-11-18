@@ -5,6 +5,9 @@ Encuentra el camino más corto desde un nodo origen a todos los demás nodos en 
 
 import heapq
 import math
+import matplotlib.pyplot as plt
+import networkx as nx
+import matplotlib.patches as mpatches
 
 
 class Grafo:
@@ -177,7 +180,149 @@ def mostrar_resultados(grafo, origen, distancias, predecesores):
 
 
 # ============================================================================
-# EJEMPLOS DE USO
+# FUNCIÓN DE VISUALIZACIÓN GRÁFICA
+# ============================================================================
+
+def visualizar_grafo(grafo, origen, distancias, predecesores):
+    """
+    Crea una visualización gráfica del grafo con el algoritmo de Dijkstra.
+    
+    Args:
+        grafo: Instancia de la clase Grafo
+        origen: Nodo inicial
+        distancias: Diccionario con distancias mínimas
+        predecesores: Diccionario con predecesores
+    """
+    # Crear grafo de NetworkX
+    G = nx.Graph()
+    
+    # Agregar aristas al grafo de NetworkX
+    for vertice in grafo.vertices:
+        for vecino, peso in grafo.obtener_vecinos(vertice):
+            # Evitar duplicados en grafo no dirigido
+            if not G.has_edge(vertice, vecino):
+                G.add_edge(vertice, vecino, weight=peso)
+    
+    # Configurar figura
+    plt.figure(figsize=(16, 10))
+    plt.suptitle(f'Algoritmo de Dijkstra - Caminos más cortos desde "{origen}"', 
+                 fontsize=18, fontweight='bold', y=0.98)
+    
+    # Crear layout (posición de los nodos)
+    # Usar spring_layout para distribución automática
+    pos = nx.spring_layout(G, k=2, iterations=50, seed=42)
+    
+    # Identificar aristas que forman parte del árbol de caminos más cortos
+    aristas_camino = []
+    for vertice in predecesores:
+        if predecesores[vertice] is not None:
+            aristas_camino.append((predecesores[vertice], vertice))
+    
+    # Dibujar todas las aristas del grafo (en gris claro)
+    nx.draw_networkx_edges(
+        G, pos,
+        edge_color='lightgray',
+        width=2,
+        alpha=0.6,
+        style='dashed'
+    )
+    
+    # Dibujar aristas del camino más corto (en rojo grueso)
+    nx.draw_networkx_edges(
+        G, pos,
+        edgelist=aristas_camino,
+        edge_color='red',
+        width=4,
+        alpha=0.9
+    )
+    
+    # Dibujar nodos normales (en azul claro)
+    nodos_normales = [n for n in G.nodes() if n != origen]
+    nx.draw_networkx_nodes(
+        G, pos,
+        nodelist=nodos_normales,
+        node_color='lightblue',
+        node_size=2000,
+        alpha=0.9,
+        edgecolors='darkblue',
+        linewidths=2
+    )
+    
+    # Dibujar nodo origen (en verde)
+    nx.draw_networkx_nodes(
+        G, pos,
+        nodelist=[origen],
+        node_color='lightgreen',
+        node_size=2500,
+        alpha=0.95,
+        edgecolors='darkgreen',
+        linewidths=3
+    )
+    
+    # Etiquetas de nodos con nombres
+    nx.draw_networkx_labels(
+        G, pos,
+        font_size=12,
+        font_weight='bold',
+        font_family='sans-serif'
+    )
+    
+    # Etiquetas de pesos en las aristas
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(
+        G, pos,
+        edge_labels,
+        font_size=10,
+        font_color='darkred',
+        bbox=dict(boxstyle='round,pad=0.3', facecolor='yellow', alpha=0.7)
+    )
+    
+    # Crear tabla de distancias
+    distancias_texto = "DISTANCIAS DESDE ORIGEN:\n" + "-" * 30 + "\n"
+    for vertice in sorted(grafo.vertices):
+        dist = distancias[vertice]
+        if dist == math.inf:
+            distancias_texto += f"{vertice}: ∞ (inalcanzable)\n"
+        else:
+            distancias_texto += f"{vertice}: {dist}\n"
+    
+    # Agregar cuadro de texto con distancias
+    plt.text(
+        0.02, 0.98,
+        distancias_texto,
+        transform=plt.gca().transAxes,
+        fontsize=11,
+        horizontalalignment='left',
+        verticalalignment='top',
+        fontfamily='monospace',
+        bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.9, edgecolor='black', linewidth=2)
+    )
+    
+    # Crear leyenda
+    leyenda_elementos = [
+        mpatches.Patch(color='lightgreen', label='Nodo Origen', edgecolor='darkgreen', linewidth=2),
+        mpatches.Patch(color='lightblue', label='Nodos Normales', edgecolor='darkblue', linewidth=2),
+        mpatches.Patch(color='red', label='Caminos Más Cortos', linewidth=3),
+        mpatches.Patch(color='lightgray', label='Otras Aristas', linewidth=2)
+    ]
+    
+    plt.legend(
+        handles=leyenda_elementos,
+        loc='lower left',
+        fontsize=11,
+        framealpha=0.9,
+        edgecolor='black',
+        fancybox=True,
+        shadow=True
+    )
+    
+    plt.axis('off')
+    plt.tight_layout()
+    plt.show()
+
+
+# ============================================================================
+# EJEMPLOS DE USO (CON VISUALIZACIÓN)
 # ============================================================================
 
 def ejemplo_basico():
@@ -207,6 +352,12 @@ def ejemplo_basico():
     
     # Mostrar resultados
     mostrar_resultados(g, origen, distancias, predecesores)
+    
+    # VISUALIZACIÓN GRÁFICA
+    print("\n" + "=" * 70)
+    print("Generando visualización gráfica...")
+    print("=" * 70)
+    visualizar_grafo(g, origen, distancias, predecesores)
 
 
 def ejemplo_red_ciudades():
@@ -237,6 +388,12 @@ def ejemplo_red_ciudades():
     
     # Mostrar resultados
     mostrar_resultados(g, origen, distancias, predecesores)
+    
+    # VISUALIZACIÓN GRÁFICA
+    print("\n" + "=" * 70)
+    print("Generando visualización gráfica...")
+    print("=" * 70)
+    visualizar_grafo(g, origen, distancias, predecesores)
 
 
 def ejemplo_interactivo():
@@ -265,9 +422,9 @@ def ejemplo_interactivo():
                 print("  ERROR: Formato incorrecto. Use: origen destino peso")
                 continue
             
-            origen, destino, peso = partes[0], partes[1], float(partes[2])
-            g.agregar_arista(origen, destino, peso)
-            print(f"  Agregada: {origen} <-> {destino} (peso: {peso})")
+            origen_arista, destino, peso = partes[0], partes[1], float(partes[2])
+            g.agregar_arista(origen_arista, destino, peso)
+            print(f"  Agregada: {origen_arista} <-> {destino} (peso: {peso})")
         
         except ValueError:
             print("  ERROR: El peso debe ser un número")
@@ -294,6 +451,12 @@ def ejemplo_interactivo():
     
     # Mostrar resultados
     mostrar_resultados(g, nodo_origen, distancias, predecesores)
+    
+    # VISUALIZACIÓN GRÁFICA
+    print("\n" + "=" * 70)
+    print("Generando visualización gráfica...")
+    print("=" * 70)
+    visualizar_grafo(g, nodo_origen, distancias, predecesores)
 
 
 def ejemplo_complejo():
@@ -335,6 +498,12 @@ def ejemplo_complejo():
     distancias, predecesores = dijkstra(g, origen)
     
     mostrar_resultados(g, origen, distancias, predecesores)
+    
+    # VISUALIZACIÓN GRÁFICA
+    print("\n" + "=" * 70)
+    print("Generando visualización gráfica...")
+    print("=" * 70)
+    visualizar_grafo(g, origen, distancias, predecesores)
 
 
 # ============================================================================
